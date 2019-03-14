@@ -16,7 +16,7 @@ import io.protostuff.runtime.RuntimeSchema;
 public class CodecFactory {
 
 	private final Class<?> clazz;
-	private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<Class<?>, Schema<?>>();
+	private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<>();
 
 	public CodecFactory(Class<?> clazz) {
 		super();

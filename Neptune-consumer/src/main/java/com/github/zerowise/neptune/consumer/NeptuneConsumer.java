@@ -1,6 +1,7 @@
 package com.github.zerowise.neptune.consumer;
 
 import java.lang.reflect.Method;
+import java.util.function.Consumer;
 
 import com.github.zerowise.neptune.kernel.CodecFactory;
 import com.github.zerowise.neptune.kernel.HeartBeatService;
@@ -22,11 +23,11 @@ public class NeptuneConsumer {
 	private EventLoopGroup worker;
 	private Channel channel;
 
-	public void start(String host, int inetPort) {
-		start(new CodecFactory(ResponseMessage.class), host, inetPort);
+	public void start(Consumer<ResponseMessage> consumer, String host, int inetPort) {
+		start(new CodecFactory(ResponseMessage.class), consumer, host, inetPort);
 	}
 
-	public void start(CodecFactory codecFactory, String host, int inetPort) {
+	public void start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort) {
 
 		if (worker == null) {
 			worker = new NioEventLoopGroup(1, new DefaultThreadFactory("CONSUMER"));
@@ -40,7 +41,7 @@ public class NeptuneConsumer {
 						protected void initChannel(Channel ch) throws Exception {
 							codecFactory.build(ch);
 							ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
-									new NeptuneConsumerHandler(newRunnable()));
+									new NeptuneConsumerHandler(newRunnable(), consumer));
 						}
 					}).option(ChannelOption.TCP_NODELAY, true).connect(host, inetPort).sync().channel();
 		} catch (InterruptedException e) {
