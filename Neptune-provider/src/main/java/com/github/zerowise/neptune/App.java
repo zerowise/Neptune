@@ -1,4 +1,4 @@
-package com.github.zerowise.neptune.consumer;
+package com.github.zerowise.neptune;
 
 /**
  * Hello world!
