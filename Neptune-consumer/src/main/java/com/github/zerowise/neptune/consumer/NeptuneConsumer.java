@@ -12,6 +12,8 @@ import com.github.zerowise.neptune.kernel.CodecFactory;
 import com.github.zerowise.neptune.kernel.HeartBeatService;
 import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
+import com.github.zerowise.neptune.kernel.Session;
+import com.github.zerowise.neptune.kernel.Session4Client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -29,33 +31,31 @@ public class NeptuneConsumer {
 	private static final Logger logger = LoggerFactory.getLogger("NeptuneConsumer");
 
 	private EventLoopGroup worker;
-	private Channel channel;
+	private Session session;
 
-	public void start(Consumer<ResponseMessage> consumer, String host, int inetPort) {
-		start(new CodecFactory(ResponseMessage.class), consumer, host, inetPort);
+	public Session start(Consumer<ResponseMessage> consumer, String host, int inetPort, long id) {
+		return start(new CodecFactory(ResponseMessage.class), consumer, host, inetPort, id);
 	}
 
-	public void start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort) {
+	public Session start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort,
+			long id) {
 
 		if (worker == null) {
 			worker = new NioEventLoopGroup(1, new DefaultThreadFactory("CONSUMER"));
 		}
+		Bootstrap bootstrap = new Bootstrap();
+		bootstrap.group(worker).channel(NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
 
-		try {
-			channel = new Bootstrap().group(worker).channel(NioSocketChannel.class)
-					.handler(new ChannelInitializer<Channel>() {
-
-						@Override
-						protected void initChannel(Channel ch) throws Exception {
-							codecFactory.build(ch);
-							ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
-									new NeptuneConsumerHandler(newRunnable(), consumer));
-						}
-					}).option(ChannelOption.TCP_NODELAY, true).connect(host, inetPort).sync().channel();
-			logger.info("NeptuneConsumer connect {}:{} success", host, inetPort);
-		} catch (InterruptedException e) {
-			logger.error("NeptuneConsumer connect {}:{} failed", host, inetPort, e);
-		}
+			@Override
+			protected void initChannel(Channel ch) throws Exception {
+				codecFactory.build(ch);
+				ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
+						new NeptuneConsumerHandler(newRunnable(), consumer));
+			}
+		}).option(ChannelOption.TCP_NODELAY, true);
+		session = new Session4Client(bootstrap, host, inetPort);
+		session.bind(id);
+		return session;
 	}
 
 	protected Runnable newRunnable() throws Exception {
@@ -65,21 +65,18 @@ public class NeptuneConsumer {
 	}
 
 	public boolean isActive() {
-		return channel != null && channel.isActive();
+		return session != null && session.isActive();
 	}
 
 	public ChannelFuture send(Object object) {
-		if (!isActive()) {
-			return null;
-		}
-		return channel.writeAndFlush(object);
+		return session.sendMessage(object);
 	}
 
 	public void shutdown() throws Exception {
 		SocketAddress addr = null;
 		if (isActive()) {
-			addr = channel.remoteAddress();
-			
+			addr = session.remoteAddress();
+
 			Method method = HeartBeatService.class.getMethod("logout");
 			RequestMessage msg = new RequestMessage(-1, method, null);
 			Optional.ofNullable(send(msg)).ifPresent(future -> {

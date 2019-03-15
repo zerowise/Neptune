@@ -85,6 +85,11 @@ public class SnowFlake {
     private long getNewstmp() {
         return System.currentTimeMillis();
     }
+    
+    
+    public long currId() {
+    	return -1;
+    }
 
     public static void main(String[] args) {
         SnowFlake snowFlake = new SnowFlake(2, 3);

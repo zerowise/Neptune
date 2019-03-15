@@ -5,18 +5,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-import com.github.zerowise.neptune.consumer.NeptuneConsumer;
 import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
+import com.github.zerowise.neptune.kernel.Session;
 
 public class JdkProxy implements Consumer<ResponseMessage> {
 
-	private final NeptuneConsumer consumer;
+	private final Session session;
 	private final SnowFlake snowFlake;
 
-	public JdkProxy(NeptuneConsumer consumer, SnowFlake snowFlake) {
+	public JdkProxy(Session session, SnowFlake snowFlake) {
 		super();
-		this.consumer = consumer;
+		this.session = session;
 		this.snowFlake = snowFlake;
 	}
 
@@ -28,7 +28,7 @@ public class JdkProxy implements Consumer<ResponseMessage> {
 					RequestMessage requestMessage = new RequestMessage(snowFlake.nextId(), method, args);
 					RpcResult result = new RpcResult();
 					rpcResults.put(requestMessage.getId(), result);
-					consumer.send(requestMessage);
+					session.sendMessage(requestMessage);
 					return result.getResult();
 				});
 	}

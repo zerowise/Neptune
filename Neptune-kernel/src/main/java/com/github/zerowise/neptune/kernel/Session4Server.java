@@ -1,3 +1,6 @@
 package com.github.zerowise.neptune.kernel;
-public class Session4Server extends Session {	
+
+import java.net.SocketAddress;
+
+public class Session4Server extends Session {
 }

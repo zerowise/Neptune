@@ -1,5 +1,6 @@
 package com.github.zerowise.neptune.kernel;
 
+import java.net.SocketAddress;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -12,10 +13,11 @@ import io.netty.util.AttributeKey;
 public abstract class Session {
 
 	private static final AttributeKey<Session> SESSION_KEY = AttributeKey.newInstance("SESSION");
-	
+
 	private static final Logger logger = LoggerFactory.getLogger("Session");
 
 	protected Channel channel;
+	protected long id;
 
 	public static Optional<Session> getSession(Channel channel) {
 		return Optional.ofNullable(channel.attr(SESSION_KEY).get());
@@ -49,5 +51,14 @@ public abstract class Session {
 			return null;
 		}
 		return this.channel.writeAndFlush(message);
+	}
+
+	public SocketAddress remoteAddress() {
+		return isActive() ? channel.remoteAddress() : null;
+	}
+
+	public Session bind(long id) {
+		this.id = id;
+		return this;
 	}
 }
