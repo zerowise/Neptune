@@ -51,9 +51,12 @@ public class CodecFactory {
 		@SuppressWarnings("unchecked")
 		Schema<T> schema = (Schema<T>) cachedSchema.get(clazz);
 		if (schema == null) {
-			schema = RuntimeSchema.getSchema(clazz);
-			if (schema != null) {
-				cachedSchema.put(clazz, schema);
+			synchronized (CodecFactory.class) {
+				schema = (Schema<T>) cachedSchema.get(clazz);
+				if (schema == null) {
+					schema = RuntimeSchema.getSchema(clazz);
+					cachedSchema.put(clazz, schema);
+				}
 			}
 		}
 		return schema;

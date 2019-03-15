@@ -1,7 +1,12 @@
 package com.github.zerowise.neptune.consumer;
 
 import java.lang.reflect.Method;
+import java.net.SocketAddress;
+import java.util.Optional;
 import java.util.function.Consumer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.zerowise.neptune.kernel.CodecFactory;
 import com.github.zerowise.neptune.kernel.HeartBeatService;
@@ -10,6 +15,7 @@ import com.github.zerowise.neptune.kernel.ResponseMessage;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -19,6 +25,8 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 public class NeptuneConsumer {
+
+	private static final Logger logger = LoggerFactory.getLogger("NeptuneConsumer");
 
 	private EventLoopGroup worker;
 	private Channel channel;
@@ -40,13 +48,13 @@ public class NeptuneConsumer {
 						@Override
 						protected void initChannel(Channel ch) throws Exception {
 							codecFactory.build(ch);
-							ch.pipeline().addLast(
-									//new IdleStateHandler(0, 5, 0),
+							ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
 									new NeptuneConsumerHandler(newRunnable(), consumer));
 						}
 					}).option(ChannelOption.TCP_NODELAY, true).connect(host, inetPort).sync().channel();
+			logger.info("NeptuneConsumer connect {}:{} success", host, inetPort);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			logger.error("NeptuneConsumer connect {}:{} failed", host, inetPort, e);
 		}
 	}
 
@@ -60,10 +68,30 @@ public class NeptuneConsumer {
 		return channel != null && channel.isActive();
 	}
 
-	public void send(Object object) {
+	public ChannelFuture send(Object object) {
 		if (!isActive()) {
-			return;
+			return null;
 		}
-		channel.writeAndFlush(object);
+		return channel.writeAndFlush(object);
+	}
+
+	public void shutdown() throws Exception {
+		SocketAddress addr = null;
+		if (isActive()) {
+			addr = channel.remoteAddress();
+			
+			Method method = HeartBeatService.class.getMethod("logout");
+			RequestMessage msg = new RequestMessage(-1, method, null);
+			Optional.ofNullable(send(msg)).ifPresent(future -> {
+				try {
+					future.sync().channel().close();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			});
+		}
+
+		worker.shutdownGracefully();
+		logger.info("NeptuneConsumer disconnect {} success shutdown!", addr);
 	}
 }

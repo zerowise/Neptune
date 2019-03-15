@@ -10,7 +10,7 @@ import com.github.zerowise.neptune.proxy.SnowFlake;
  *
  */
 public class ExampleConsumer {
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		NeptuneConsumer neptuneConsumer = new NeptuneConsumer();
 		SnowFlake snowFlake = new SnowFlake(2, 3);
 		JdkProxy proxy = new JdkProxy(neptuneConsumer, snowFlake);
@@ -19,5 +19,7 @@ public class ExampleConsumer {
 
 		HelloWorldService helloWorldService = proxy.proxy(HelloWorldService.class);
 		helloWorldService.helloworld();
+		
+		neptuneConsumer.shutdown();
 	}
 }
