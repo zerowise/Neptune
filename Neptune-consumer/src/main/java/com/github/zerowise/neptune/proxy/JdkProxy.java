@@ -9,12 +9,12 @@ import com.github.zerowise.neptune.consumer.NeptuneConsumer;
 import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
 
-public class RpcProxy implements Consumer<ResponseMessage> {
+public class JdkProxy implements Consumer<ResponseMessage> {
 
 	private final NeptuneConsumer consumer;
 	private final SnowFlake snowFlake;
 
-	public RpcProxy(NeptuneConsumer consumer, SnowFlake snowFlake) {
+	public JdkProxy(NeptuneConsumer consumer, SnowFlake snowFlake) {
 		super();
 		this.consumer = consumer;
 		this.snowFlake = snowFlake;

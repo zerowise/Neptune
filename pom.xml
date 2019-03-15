@@ -18,5 +18,6 @@
 		<module>Neptune-kernel</module>
 		<module>Neptune-consumer</module>
     <module>Neptune-provider</module>
+    <module>Neptune-example</module>
   </modules>
 </project>
