@@ -40,7 +40,8 @@ public class NeptuneConsumer {
 						@Override
 						protected void initChannel(Channel ch) throws Exception {
 							codecFactory.build(ch);
-							ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
+							ch.pipeline().addLast(
+									//new IdleStateHandler(0, 5, 0),
 									new NeptuneConsumerHandler(newRunnable(), consumer));
 						}
 					}).option(ChannelOption.TCP_NODELAY, true).connect(host, inetPort).sync().channel();

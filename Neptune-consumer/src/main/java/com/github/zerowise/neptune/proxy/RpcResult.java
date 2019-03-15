@@ -31,7 +31,7 @@ public class RpcResult {
 			lock.lock();
 			this.result = result;
 			this.error = error;
-			succ.notify();
+			succ.signal();
 		} finally {
 			lock.unlock();
 		}

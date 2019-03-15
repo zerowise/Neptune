@@ -1,11 +1,9 @@
 package com.github.zerowise.neptune.provider;
 
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import com.github.zerowise.neptune.kernel.CodecFactory;
 import com.github.zerowise.neptune.kernel.RequestMessage;
-import com.github.zerowise.neptune.kernel.ResponseMessage;
 import com.github.zerowise.neptune.kernel.Session;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -25,7 +23,7 @@ public class NeptuneProvider {
 	private EventLoopGroup boss;
 	private EventLoopGroup worker;
 	public void start(BiConsumer<Session, RequestMessage> consumer, int inetPort) {
-		start(new CodecFactory(ResponseMessage.class), consumer, inetPort);
+		start(new CodecFactory(RequestMessage.class), consumer, inetPort);
 	}
 	public void start(CodecFactory codecFactory, BiConsumer<Session, RequestMessage> consumer, int inetPort) {
 		if (boss == null) {
@@ -43,7 +41,9 @@ public class NeptuneProvider {
 						@Override
 						protected void initChannel(Channel ch) throws Exception {
 							codecFactory.build(ch);
-							ch.pipeline().addLast(new IdleStateHandler(6, 0, 0), new NeptuneProviderHandler(consumer));
+							ch.pipeline().addLast(
+									//new IdleStateHandler(6, 0, 0), 
+									new NeptuneProviderHandler(consumer));
 						}
 					}).childOption(ChannelOption.SO_KEEPALIVE, true)// 开启时系统会在连接空闲一定时间后向客户端发送请求确认连接是否有效
 					.childOption(ChannelOption.TCP_NODELAY, true)// 关闭Nagle算法

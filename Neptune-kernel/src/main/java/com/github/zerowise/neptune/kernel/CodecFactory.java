@@ -3,6 +3,9 @@ package com.github.zerowise.neptune.kernel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -15,6 +18,7 @@ import io.protostuff.runtime.RuntimeSchema;
 
 public class CodecFactory {
 
+	private static final Logger logger = LoggerFactory.getLogger("CodecFactory");
 	private final Class<?> clazz;
 	private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<>();
 
@@ -89,7 +93,8 @@ public class CodecFactory {
 			ProtostuffIOUtil.mergeFrom(data, obj, schema);
 			return obj;
 		} catch (Exception e) {
-			throw new IllegalStateException(e.getMessage(), e);
+			logger.error("when deserializer clazz:{} error!", clazz.getName(), e);
+			throw new RuntimeException(e);
 		}
 	}
 

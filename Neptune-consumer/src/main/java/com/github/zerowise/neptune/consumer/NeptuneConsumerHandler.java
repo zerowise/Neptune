@@ -28,7 +28,7 @@ public class NeptuneConsumerHandler extends SimpleChannelInboundHandler<Response
 	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
 		if (evt instanceof IdleStateEvent) {
 			// 不管是读事件空闲还是写事件空闲都向服务器发送心跳包
-			heartBeat.run();
+			//heartBeat.run();
 		}
 	}
 }

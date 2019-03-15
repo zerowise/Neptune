@@ -14,7 +14,7 @@ import com.github.zerowise.neptune.provider.NeptuneProvider;
  * Hello world!
  *
  */
-public class App {
+public class ExampleProvider {
 	public static void main(String[] args) {
 		Map<MethodInvokerId, MethodInvoker> m = new HashMap<>();
 		HelloWorldService helloWorldService = new HelloWorldServiceImpl();
