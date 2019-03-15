@@ -34,11 +34,9 @@ public class NeptuneProvider {
 		if (boss == null) {
 			boss = new NioEventLoopGroup(1, new DefaultThreadFactory("PROVIDER-BOSS"));
 		}
-
 		if (worker == null) {
 			worker = new NioEventLoopGroup(0, new DefaultThreadFactory("PROVIDER-WORK"));
 		}
-
 		try {
 			new ServerBootstrap().group(boss, worker).channel(NioServerSocketChannel.class)
 					.childHandler(new ChannelInitializer<Channel>() {
@@ -58,10 +56,10 @@ public class NeptuneProvider {
 					.option(ChannelOption.SO_REUSEADDR, true)// 端口重用,如果开启则在上一个进程未关闭情况下也能正常启动
 					.option(ChannelOption.SO_BACKLOG, 64)// 最大等待连接的connection数量
 					.bind(inetPort).sync();
-			logger.info("NeptuneProvider start listen {}",  inetPort);
+			logger.info("NeptuneProvider start listen {}", inetPort);
 		} catch (InterruptedException e) {
 			shutdown();
-			logger.info("NeptuneProvider failed listen {}",inetPort);
+			logger.info("NeptuneProvider failed listen {}", inetPort);
 		}
 	}
 

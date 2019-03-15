@@ -1,23 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.github.zerowise</groupId>
 		<artifactId>env-parent</artifactId>
 		<version>1.8</version>
 	</parent>
-	<groupId>com.github.zerowise</groupId>
 	<artifactId>Neptune</artifactId>
-	<version>1.0.0-snapshot</version>
+	<version>${neptune.version}</version>
 	<packaging>pom</packaging>
 	<properties>
+		<neptune.version>1.0.0</neptune.version>
+		<slf4j.version>1.7.25</slf4j.version>
+		<log4j.version>2.8.2</log4j.version>
+		<protostuff.version>1.6.0</protostuff.version>
+		<netty.version>4.1.34.Final</netty.version>
+		<junit.version>4.12</junit.version>
 	</properties>
-	<build>
-	</build>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-all</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.protostuff</groupId>
+				<artifactId>protostuff-runtime</artifactId>
+				<version>${protostuff.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.protostuff</groupId>
+				<artifactId>protostuff-core</artifactId>
+				<version>${protostuff.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-slf4j-impl</artifactId>
+				<version>${log4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-web</artifactId>
+				<version>${log4j.version}</version>
+				<scope>runtime</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-api</artifactId>
+				<version>${log4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-core</artifactId>
+				<version>${log4j.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.zerowise</groupId>
+				<artifactId>Neptune-kernel</artifactId>
+				<version>${neptune.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.zerowise</groupId>
+				<artifactId>Neptune-consumer</artifactId>
+				<version>${neptune.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.zerowise</groupId>
+				<artifactId>Neptune-provider</artifactId>
+				<version>${neptune.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<modules>
 		<module>Neptune-kernel</module>
 		<module>Neptune-consumer</module>
-    <module>Neptune-provider</module>
-    <module>Neptune-example</module>
-  </modules>
+		<module>Neptune-provider</module>
+		<module>Neptune-example</module>
+	</modules>
 </project>

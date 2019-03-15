@@ -17,6 +17,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
 public class NeptuneProviderHandler extends SimpleChannelInboundHandler<RequestMessage> {
+	
 	private static final Logger logger = LoggerFactory.getLogger("NeptuneProviderHandler");
 	private final BiConsumer<Session, RequestMessage> consumer;
 
