@@ -1,6 +1,7 @@
 package com.github.zerowise.neptune.consumer;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.SocketAddress;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -14,6 +15,7 @@ import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
 import com.github.zerowise.neptune.kernel.Session;
 import com.github.zerowise.neptune.kernel.Session4Client;
+import com.github.zerowise.neptune.proxy.RpcResult;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -32,6 +34,7 @@ public class NeptuneConsumer {
 
 	private EventLoopGroup worker;
 	private Session session;
+	private HeartBeatService heartBeat;
 
 	public Session start(Consumer<ResponseMessage> consumer, String host, int inetPort, long id) {
 		return start(new CodecFactory(ResponseMessage.class), consumer, host, inetPort, id);
@@ -39,6 +42,8 @@ public class NeptuneConsumer {
 
 	public Session start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort,
 			long id) {
+
+		heartBeat = createService();
 
 		if (worker == null) {
 			worker = new NioEventLoopGroup(1, new DefaultThreadFactory("CONSUMER"));
@@ -48,20 +53,20 @@ public class NeptuneConsumer {
 
 			@Override
 			protected void initChannel(Channel ch) throws Exception {
-				codecFactory.build(ch);
-				ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
-						new NeptuneConsumerHandler(newRunnable(), consumer));
+				codecFactory.build().andThen(channel -> ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
+						new NeptuneConsumerHandler(newRunnable(), consumer))).accept(ch);
 			}
 		}).option(ChannelOption.TCP_NODELAY, true);
-		session = new Session4Client(bootstrap, host, inetPort);
-		session.bind(id);
+		session = new Session4Client(bootstrap, host, inetPort).bind(id);
 		return session;
 	}
 
-	protected Runnable newRunnable() throws Exception {
-		Method method = HeartBeatService.class.getMethod("heartBeat");
-		RequestMessage msg = new RequestMessage(-1, method, null);
-		return () -> send(msg);
+	protected Runnable newRunnable() {
+		return () -> {
+			if (heartBeat != null) {
+				heartBeat.heartBeat();
+			}
+		};
 	}
 
 	public boolean isActive() {
@@ -72,20 +77,23 @@ public class NeptuneConsumer {
 		return session.sendMessage(object);
 	}
 
-	public void shutdown() throws Exception {
+	protected HeartBeatService createService() {
+		Class<?> infClazz = HeartBeatService.class;
+		return (HeartBeatService) Proxy.newProxyInstance(infClazz.getClassLoader(), new Class[] { infClazz },
+				(proxy, method, args) -> {
+					session.sendMessage(new RequestMessage(-1, method, args));
+					return null;
+				});
+	}
+
+	public void shutdown() {
 		SocketAddress addr = null;
 		if (isActive()) {
 			addr = session.remoteAddress();
-
-			Method method = HeartBeatService.class.getMethod("logout");
-			RequestMessage msg = new RequestMessage(-1, method, null);
-			Optional.ofNullable(send(msg)).ifPresent(future -> {
-				try {
-					future.sync().channel().close();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			});
+			if(heartBeat != null) {
+				heartBeat.logout();
+			}
+			session.unbind();
 		}
 
 		worker.shutdownGracefully();

@@ -2,6 +2,7 @@ package com.github.zerowise.neptune.kernel;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,24 +28,26 @@ public class CodecFactory {
 		this.clazz = clazz;
 	}
 
-	public void build(Channel channel) {
-		channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4) {
+	public Consumer<Channel> build() {
+		return channel -> {
+			channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4) {
 
-			@Override
-			protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
-				ByteBuf byteBuf = (ByteBuf) super.decode(ctx, in);
-				byte[] bytes = new byte[byteBuf.readableBytes()];
-				byteBuf.readBytes(bytes);
-				return deserializer(bytes, clazz);
-			}
-		}, new MessageToByteEncoder<Object>() {
+				@Override
+				protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+					ByteBuf byteBuf = (ByteBuf) super.decode(ctx, in);
+					byte[] bytes = new byte[byteBuf.readableBytes()];
+					byteBuf.readBytes(bytes);
+					return deserializer(bytes, clazz);
+				}
+			}, new MessageToByteEncoder<Object>() {
 
-			@Override
-			protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
-				byte[] bytes = serializer(msg);
-				out.writeInt(bytes.length).writeBytes(bytes);
-			}
-		});
+				@Override
+				protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+					byte[] bytes = serializer(msg);
+					out.writeInt(bytes.length).writeBytes(bytes);
+				}
+			});
+		};
 	}
 
 	private static <T> Schema<T> getSchema(Class<T> clazz) {

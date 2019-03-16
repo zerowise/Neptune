@@ -24,6 +24,9 @@ public class Session4Client extends Session4Server {
 
 	@Override
 	public boolean reConnect() {
+		if (bootstrap.config().group().isShutdown()) {
+			return false;
+		}
 
 		if (isActive()) {
 			return true;

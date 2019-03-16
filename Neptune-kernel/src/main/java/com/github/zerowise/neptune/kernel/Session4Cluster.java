@@ -15,10 +15,13 @@ public class Session4Cluster extends Session {
 
 	@Override
 	public ChannelFuture sendMessage(Object message) {
-		
-		sessions.values().stream().filter(Session::isActive).findAny().ifPresent(sess->sess.sendMessage(message));
-		return null;
+
+		return sessions.values()
+				.stream()
+				.filter(Session::isActive)
+				.findAny()
+				.map(sess -> sess.sendMessage(message))
+				.get();
 	}
-	
-	
+
 }
