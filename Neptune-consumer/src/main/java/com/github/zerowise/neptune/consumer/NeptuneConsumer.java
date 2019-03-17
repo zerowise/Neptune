@@ -15,7 +15,6 @@ import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
 import com.github.zerowise.neptune.kernel.Session;
 import com.github.zerowise.neptune.kernel.Session4Client;
-import com.github.zerowise.neptune.proxy.RpcResult;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -42,9 +41,8 @@ public class NeptuneConsumer {
 
 	public Session start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort,
 			long id) {
-
-		heartBeat = createService();
-
+		if (heartBeat == null)
+			heartBeat = createService();
 		if (worker == null) {
 			worker = new NioEventLoopGroup(1, new DefaultThreadFactory("CONSUMER"));
 		}
@@ -62,11 +60,7 @@ public class NeptuneConsumer {
 	}
 
 	protected Runnable newRunnable() {
-		return () -> {
-			if (heartBeat != null) {
-				heartBeat.heartBeat();
-			}
-		};
+		return heartBeat == null ? null : () -> heartBeat.heartBeat();
 	}
 
 	public boolean isActive() {
@@ -90,7 +84,7 @@ public class NeptuneConsumer {
 		SocketAddress addr = null;
 		if (isActive()) {
 			addr = session.remoteAddress();
-			if(heartBeat != null) {
+			if (heartBeat != null) {
 				heartBeat.logout();
 			}
 			session.unbind();

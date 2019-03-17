@@ -43,8 +43,11 @@ public class NeptuneProvider {
 
 						@Override
 						protected void initChannel(Channel ch) throws Exception {
-							codecFactory.build(ch);
-							ch.pipeline().addLast(new IdleStateHandler(6, 0, 0), new NeptuneProviderHandler(consumer));
+							codecFactory.build().andThen(channel -> {
+								channel.pipeline().addLast(new IdleStateHandler(6, 0, 0),
+										new NeptuneProviderHandler(consumer));
+							}).accept(ch);
+
 						}
 					}).childOption(ChannelOption.SO_KEEPALIVE, true)// 开启时系统会在连接空闲一定时间后向客户端发送请求确认连接是否有效
 					.childOption(ChannelOption.TCP_NODELAY, true)// 关闭Nagle算法
