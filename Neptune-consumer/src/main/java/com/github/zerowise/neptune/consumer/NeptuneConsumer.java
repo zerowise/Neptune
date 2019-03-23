@@ -1,24 +1,20 @@
 package com.github.zerowise.neptune.consumer;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.zerowise.neptune.event.EventBus;
 import com.github.zerowise.neptune.kernel.CodecFactory;
-import com.github.zerowise.neptune.kernel.HeartBeatService;
-import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
 import com.github.zerowise.neptune.kernel.Session;
 import com.github.zerowise.neptune.kernel.Session4Client;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -27,70 +23,45 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
-public class NeptuneConsumer {
+public class NeptuneConsumer implements RpcConsumer{
 
 	private static final Logger logger = LoggerFactory.getLogger("NeptuneConsumer");
 
 	private EventLoopGroup worker;
-	private Session session;
-	private HeartBeatService heartBeat;
+	private SocketAddress addr;
+	private EventBus eventBus;
 
-	public Session start(Consumer<ResponseMessage> consumer, String host, int inetPort, long id) {
-		return start(new CodecFactory(ResponseMessage.class), consumer, host, inetPort, id);
+	@Override
+	public Session start(Consumer<ResponseMessage> consumer, String host, int inetPort) {
+		return start(new CodecFactory(ResponseMessage.class), consumer, host, inetPort);
 	}
 
-	public Session start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort,
-			long id) {
-		if (heartBeat == null)
-			heartBeat = createService();
+	@Override
+	public Session start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort) {
 		if (worker == null) {
 			worker = new NioEventLoopGroup(1, new DefaultThreadFactory("CONSUMER"));
 		}
+
+		addr = new InetSocketAddress(host, inetPort);
 		Bootstrap bootstrap = new Bootstrap();
 		bootstrap.group(worker).channel(NioSocketChannel.class).handler(new ChannelInitializer<Channel>() {
 
 			@Override
 			protected void initChannel(Channel ch) throws Exception {
 				codecFactory.build().andThen(channel -> ch.pipeline().addLast(new IdleStateHandler(0, 5, 0),
-						new NeptuneConsumerHandler(newRunnable(), consumer))).accept(ch);
+						new NeptuneConsumerHandler(consumer))).accept(ch);
 			}
 		}).option(ChannelOption.TCP_NODELAY, true);
-		session = new Session4Client(bootstrap, host, inetPort).bind(id);
-		return session;
+		return new Session4Client(bootstrap, addr);
 	}
 
-	protected Runnable newRunnable() {
-		return heartBeat == null ? null : () -> heartBeat.heartBeat();
-	}
-
-	public boolean isActive() {
-		return session != null && session.isActive();
-	}
-
-	public ChannelFuture send(Object object) {
-		return session.sendMessage(object);
-	}
-
-	protected HeartBeatService createService() {
-		Class<?> infClazz = HeartBeatService.class;
-		return (HeartBeatService) Proxy.newProxyInstance(infClazz.getClassLoader(), new Class[] { infClazz },
-				(proxy, method, args) -> {
-					session.sendMessage(new RequestMessage(-1, method, args));
-					return null;
-				});
-	}
-
-	public void shutdown() {
-		SocketAddress addr = null;
-		if (isActive()) {
-			addr = session.remoteAddress();
-			if (heartBeat != null) {
-				heartBeat.logout();
-			}
-			session.unbind();
-		}
-
+	public void stop() {
 		worker.shutdownGracefully();
 		logger.info("NeptuneConsumer disconnect {} success shutdown!", addr);
+	}
+
+	@Override
+	public void regist(EventBus eventBus) {
+		this.eventBus = eventBus;
 	}
 }

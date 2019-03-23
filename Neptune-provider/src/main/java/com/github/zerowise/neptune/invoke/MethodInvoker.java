@@ -20,4 +20,9 @@ public class MethodInvoker {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public MethodInvokerId getKey() {
+		return new MethodInvokerId(method.getDeclaringClass().getName(), method.getName(),
+						method.getParameterTypes());
+	}
 }

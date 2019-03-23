@@ -1,8 +1,13 @@
 package com.github.zerowise.neptune;
 
-public interface Service {
+import com.github.zerowise.neptune.event.EventBus;
 
-	void start();
+public interface Service {
 	
-	void stop();
+	void regist(EventBus eventBus);
+
+	void start() throws Throwable;
+	
+	void stop() throws Throwable;
+
 }

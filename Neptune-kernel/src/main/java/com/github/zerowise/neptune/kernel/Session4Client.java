@@ -1,5 +1,7 @@
 package com.github.zerowise.neptune.kernel;
 
+import java.net.SocketAddress;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,15 +12,12 @@ public class Session4Client extends Session4Server {
 	private static final Logger logger = LoggerFactory.getLogger("Session4Client");
 
 	private Bootstrap bootstrap;
-	private String host;
-	private int inetPort;
+	private SocketAddress addr;
 
-	public Session4Client(Bootstrap bootstrap, String host, int inetPort) {
+	public Session4Client(Bootstrap bootstrap, SocketAddress addr) {
 		super();
 		this.bootstrap = bootstrap;
-		this.host = host;
-		this.inetPort = inetPort;
-
+		this.addr = addr;
 		reConnect();
 	}
 
@@ -33,10 +32,10 @@ public class Session4Client extends Session4Server {
 		}
 
 		try {
-			channel = bootstrap.connect(host, inetPort).sync().channel();
-			logger.info("NeptuneConsumer connect {}:{} success", host, inetPort);
+			channel = bootstrap.connect(addr).sync().channel();
+			logger.info("NeptuneConsumer connect {} success", addr);
 		} catch (InterruptedException e) {
-			logger.error("NeptuneConsumer connect {}:{} failed", host, inetPort, e);
+			logger.error("NeptuneConsumer connect {} failed", addr, e);
 		}
 		return isActive();
 	}

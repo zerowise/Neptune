@@ -1,8 +1,12 @@
 package com.github.zerowise.neptune.consumer;
 
+import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
 
+import com.github.zerowise.neptune.kernel.HeartBeatService;
+import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
+import com.github.zerowise.neptune.kernel.Session;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -10,13 +14,17 @@ import io.netty.handler.timeout.IdleStateEvent;
 
 public class NeptuneConsumerHandler extends SimpleChannelInboundHandler<ResponseMessage> {
 
-	private final Runnable heartBeat;
+	private HeartBeatService heartBeat;
 	private final Consumer<ResponseMessage> consumer;
 
-	public NeptuneConsumerHandler(Runnable heartBeat, Consumer<ResponseMessage> consumer) {
+	public NeptuneConsumerHandler(Consumer<ResponseMessage> consumer) {
 		super();
-		this.heartBeat = heartBeat;
 		this.consumer = consumer;
+	}
+
+	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		heartBeat = createService(HeartBeatService.class, Session.getSession(ctx.channel()).get());
 	}
 
 	@Override
@@ -28,7 +36,15 @@ public class NeptuneConsumerHandler extends SimpleChannelInboundHandler<Response
 	public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
 		if (evt instanceof IdleStateEvent && heartBeat != null) {
 			// 不管是读事件空闲还是写事件空闲都向服务器发送心跳包
-			heartBeat.run();
+			heartBeat.heartBeat();
 		}
+	}
+
+	protected <T> T createService(Class<T> infClazz, Session session) {
+		return (T) Proxy.newProxyInstance(infClazz.getClassLoader(), new Class[] { infClazz },
+				(proxy, method, args) -> {
+					session.sendMessage(new RequestMessage(-1, method, args));
+					return null;
+				});
 	}
 }

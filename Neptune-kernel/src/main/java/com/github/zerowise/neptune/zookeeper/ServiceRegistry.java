@@ -1,90 +1,71 @@
 package com.github.zerowise.neptune.zookeeper;
 
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.zerowise.neptune.kernel.Constant;
+import com.github.zerowise.neptune.Configs;
+import com.github.zerowise.neptune.event.EventListener;
 
 /**
  * 服务注册
  *
  */
-public class ServiceRegistry {
+public class ServiceRegistry extends ZookeeperService {
+	private static final Logger logger = LoggerFactory.getLogger(ServiceRegistry.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(ServiceRegistry.class);
+	public ServiceRegistry() {
+		super();
+	}
 
-    private CountDownLatch latch = new CountDownLatch(1);
+	private void register(String data) {
+		if (data != null) {
+			createNode(data);
+		}
+	}
 
-    private String registryAddress;
+	private void addRootNode() {
+		try {
+			Stat s = zookeeper.exists(Configs.getString("zk.register.path"), false);
+			if (s == null) {
+				zookeeper.create(Configs.getString("zk.register.path"), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT);
+			}
+		} catch (KeeperException | InterruptedException e) {
+			logger.error("", e);
+		}
+	}
 
-    public ServiceRegistry(String registryAddress) {
-        this.registryAddress = registryAddress;
-    }
+	private void createNode(String data) {
+		try {
+			byte[] bytes = data.getBytes();
+			String path = zookeeper.create(Configs.getString("zk.register.path") + "/data", bytes,
+					ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+			logger.debug("create zookeeper node ({} => {})", path, data);
+		} catch (KeeperException | InterruptedException e) {
+			logger.error("", e);
+		}
+	}
 
-    public void register(String data) {
-        if (data != null) {
-            ZooKeeper zk = connectServer();
-            if (zk != null) {
-                addRootNode(zk); // Add root node if not exist
-                createNode(zk, data);
-            }
-        }
-    }
+	@Override
+	public void start() throws Throwable {
+		if (zookeeper != null) {
+			addRootNode(); // Add root node if not exist
+		}
+		eventBus.notify(new ZkRegisterStartedEvent());
+		eventBus.regist(new EventListener<ZkRegisterNodeEvent>() {
 
-    private ZooKeeper connectServer() {
-        ZooKeeper zk = null;
-        try {
-            zk = new ZooKeeper(registryAddress, Constant.ZK_SESSION_TIMEOUT, new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                    if (event.getState() == Event.KeeperState.SyncConnected) {
-                        latch.countDown();
-                    }
-                }
-            });
-            latch.await();
-        } catch (IOException e) {
-            logger.error("", e);
-        }
-        catch (InterruptedException ex){
-            logger.error("", ex);
-        }
-        return zk;
-    }
+			@Override
+			public void onEvent(ZkRegisterNodeEvent event) {
+				register(event.node);
+			}
+		});
+	}
 
-    private void addRootNode(ZooKeeper zk){
-        try {
-            Stat s = zk.exists(Constant.ZK_REGISTRY_PATH, false);
-            if (s == null) {
-                zk.create(Constant.ZK_REGISTRY_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            }
-        } catch (KeeperException e) {
-            logger.error(e.toString());
-        } catch (InterruptedException e) {
-            logger.error(e.toString());
-        }
-    }
-
-    private void createNode(ZooKeeper zk, String data) {
-        try {
-            byte[] bytes = data.getBytes();
-            String path = zk.create(Constant.ZK_DATA_PATH, bytes, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-            logger.debug("create zookeeper node ({} => {})", path, data);
-        } catch (KeeperException e) {
-            logger.error("", e);
-        }
-        catch (InterruptedException ex){
-            logger.error("", ex);
-        }
-    }
+	@Override
+	protected void subcribe() {
+	}
 }

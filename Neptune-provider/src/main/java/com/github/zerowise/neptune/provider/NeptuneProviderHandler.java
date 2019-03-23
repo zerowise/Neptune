@@ -23,8 +23,7 @@ public class NeptuneProviderHandler extends SimpleChannelInboundHandler<RequestM
 
 	public NeptuneProviderHandler(BiConsumer<Session, RequestMessage> consumer) {
 		super();
-		Objects.requireNonNull(consumer);
-		this.consumer = consumer;
+		this.consumer = Objects.requireNonNull(consumer);
 	}
 
 	@Override

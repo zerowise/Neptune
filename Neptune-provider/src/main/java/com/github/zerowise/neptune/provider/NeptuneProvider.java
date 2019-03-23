@@ -5,6 +5,7 @@ import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.zerowise.neptune.Configs;
 import com.github.zerowise.neptune.kernel.CodecFactory;
 import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.Session;
@@ -26,11 +27,12 @@ public class NeptuneProvider {
 	private EventLoopGroup boss;
 	private EventLoopGroup worker;
 
-	public void start(BiConsumer<Session, RequestMessage> consumer, int inetPort) {
-		start(new CodecFactory(RequestMessage.class), consumer, inetPort);
+	public void start(BiConsumer<Session, RequestMessage> consumer) {
+		start(new CodecFactory(RequestMessage.class), consumer);
 	}
 
-	public void start(CodecFactory codecFactory, BiConsumer<Session, RequestMessage> consumer, int inetPort) {
+	public void start(CodecFactory codecFactory, BiConsumer<Session, RequestMessage> consumer) {
+		int inetPort = Configs.getInt("rpc.remote.port", 8899);
 		if (boss == null) {
 			boss = new NioEventLoopGroup(1, new DefaultThreadFactory("PROVIDER-BOSS"));
 		}

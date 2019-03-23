@@ -1,5 +1,6 @@
 package com.github.zerowise.neptune.invoke;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -14,22 +15,26 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 public class RpcInvoker implements BiConsumer<Session, RequestMessage> {
 	private ExecutorService executorService;
 
-	private final Map<MethodInvokerId, MethodInvoker> methodInvokers;
+	private Map<MethodInvokerId, MethodInvoker> methodInvokers;
 
-	public RpcInvoker(Map<MethodInvokerId, MethodInvoker> methodInvokers) {
-		this(Executors.newCachedThreadPool(new DefaultThreadFactory("RpcServiceInvoker")), methodInvokers);
+	public RpcInvoker() {
+		this(Executors.newCachedThreadPool(new DefaultThreadFactory("RpcServiceInvoker")));
 	}
 
-	public RpcInvoker(ExecutorService executorService, Map<MethodInvokerId, MethodInvoker> methodInvokers) {
+	public RpcInvoker(ExecutorService executorService) {
 		this.executorService = executorService;
-		this.methodInvokers = methodInvokers;
+		this.methodInvokers = new HashMap<>();
+	}
+
+	public void register(MethodInvoker methodInvoker) {
+		this.methodInvokers.putIfAbsent(methodInvoker.getKey(), methodInvoker);
 	}
 
 	@Override
 	public void accept(Session session, RequestMessage request) {
 		executorService.execute(() -> {
 			if (request.getId() < 0) {
-				//心跳
+				// 心跳
 				return;
 			}
 			MethodInvoker methodInvoker = methodInvokers.get(new MethodInvokerId(request.getServiceName(),
