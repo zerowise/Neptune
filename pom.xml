@@ -95,5 +95,6 @@
         <module>Neptune-provider</module>
         <module>Neptune-example</module>
         <module>Neptune-event</module>
+        <module>Neptune-monitor</module>
     </modules>
 </project>
