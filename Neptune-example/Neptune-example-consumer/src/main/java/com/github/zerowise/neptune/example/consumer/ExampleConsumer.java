@@ -11,34 +11,30 @@ import com.github.zerowise.neptune.zookeeper.ServiceDiscovery;
 
 /**
  * Hello world!
- *
  */
 public class ExampleConsumer {
-	public static void main(String[] args) throws Throwable {
+    public static void main(String[] args) throws Throwable {
 
 
-		EventBus eventBus = new EventBus();
+        EventBus eventBus = new EventBus();
 
-		//加入zookeeper 发现
-		ServiceDiscovery discovery = new ServiceDiscovery();
-		discovery.regist(eventBus);
+        //加入zookeeper 发现
+        ServiceDiscovery discovery = new ServiceDiscovery();
+        discovery.regist(eventBus);
 
-		JdkProxy proxy = new JdkProxy();
+        JdkProxy proxy = new JdkProxy();
 
-		NeptuneClusterConsumer clusterConsumer = new NeptuneClusterConsumer(proxy);
+        NeptuneClusterConsumer clusterConsumer = new NeptuneClusterConsumer(proxy);
 
-		clusterConsumer.regist(eventBus);
-
-
-
-		SnowFlake snowFlake = new SnowFlake(2, 3);
-
-		HelloWorldService helloWorldService = proxy.proxy(HelloWorldService.class, clusterConsumer,snowFlake);
+        clusterConsumer.regist(eventBus);
 
 
+        SnowFlake snowFlake = new SnowFlake(2, 3);
 
-		discovery.start();
+        HelloWorldService helloWorldService = proxy.proxy(HelloWorldService.class, clusterConsumer, snowFlake);
 
+
+        discovery.start();
 
 
 //		helloWorldService.helloworld();
@@ -47,5 +43,5 @@ public class ExampleConsumer {
 //
 //		clusterConsumer.stop();
 //		discovery.stop();
-	}
+    }
 }
