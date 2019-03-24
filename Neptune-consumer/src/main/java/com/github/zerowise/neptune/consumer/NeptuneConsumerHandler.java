@@ -8,6 +8,7 @@ import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
 import com.github.zerowise.neptune.kernel.Session;
 
+import com.github.zerowise.neptune.kernel.Session4Client;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleStateEvent;

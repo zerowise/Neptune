@@ -7,44 +7,57 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus implements EventNotify, EventRegist {
 
-	private ConcurrentHashMap<Integer, List<EventListener<? extends Event>>> listeners;
+    private ConcurrentHashMap<Integer, List<EventListenerHolder>> listeners;
 
-	private ConcurrentHashMap<Class<?>, Integer> clazzCodes;
+    private ConcurrentHashMap<Class<?>, Integer> clazzCodes;
 
-	public EventBus() {
-		super();
-		listeners = new ConcurrentHashMap<>();
-	}
+    public EventBus() {
+        super();
+        this.listeners = new ConcurrentHashMap<>();
+        this.clazzCodes = new ConcurrentHashMap<>();
+    }
 
-	@Override
-	public void regist(EventListener<? extends Event> eventListener) {
-		EventListener<? extends Event> value = Objects.requireNonNull(eventListener);
+    @Override
+    public void regist(Object obj, EventListener<? extends Event> eventListener) {
+        EventListenerHolder holder = new EventListenerHolder(obj, eventListener);
 
-		listeners.computeIfAbsent(value.getCode(), key -> new CopyOnWriteArrayList<>()).add(value);
+        listeners.computeIfAbsent(holder.getCode(), key -> new CopyOnWriteArrayList<>()).add(holder);
 
-	}
+    }
 
-	@Override
-	public void unregist(EventListener<? extends Event> eventListener) {
-		EventListener<? extends Event> value = Objects.requireNonNull(eventListener);
-		listeners.computeIfPresent(value.getCode(), (key, vals) -> {
-			vals.remove(value);
-			return vals;
-		});
-	}
+    @Override
+    public void unregist(Object obj) {
+        Object value = Objects.requireNonNull(obj);
+        listeners.values().forEach(list -> list.removeIf(val -> val.obj == value));
+    }
 
-	@Override
-	public void notify(Event event) {
-		Event e = Objects.requireNonNull(event);
-		int code = clazzCodes.computeIfAbsent(e.getClass(), key -> e.code());
+    @Override
+    public void notify(Event event) {
+        Event e = Objects.requireNonNull(event);
+        int code = clazzCodes.computeIfAbsent(e.getClass(), key -> e.code());
 
-		List<EventListener<? extends Event>> list = listeners.get(code);
+        List<EventListenerHolder> list = listeners.get(code);
 
-		if (list == null || list.isEmpty()) {
-			return;
-		}
+        if (list == null || list.isEmpty()) {
+            return;
+        }
 
-		list.forEach(register -> register.onEvent(e.cast()));
-	}
+        list.forEach(register -> register.listener.onEvent(e.cast()));
+    }
+
+
+    private class EventListenerHolder {
+        private final Object obj;
+        private final EventListener<? extends Event> listener;
+
+        private EventListenerHolder(Object obj, EventListener<? extends Event> listener) {
+            this.obj = Objects.requireNonNull(obj);
+            this.listener = Objects.requireNonNull(listener);
+        }
+
+        private int getCode() {
+            return listener.getCode();
+        }
+    }
 
 }

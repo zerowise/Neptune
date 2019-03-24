@@ -61,4 +61,8 @@ public abstract class Session {
 		this.id = id;
 		return this;
 	}
+
+	public void stop(){
+
+	}
 }

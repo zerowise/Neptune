@@ -1,6 +1,8 @@
 package com.github.zerowise.neptune.example.consumer;
 
+import com.github.zerowise.neptune.consumer.NeptuneClusterConsumer;
 import com.github.zerowise.neptune.consumer.NeptuneConsumer;
+import com.github.zerowise.neptune.event.EventBus;
 import com.github.zerowise.neptune.example.api.HelloWorldService;
 import com.github.zerowise.neptune.kernel.Session4Cluster;
 import com.github.zerowise.neptune.proxy.JdkProxy;
@@ -14,20 +16,36 @@ import com.github.zerowise.neptune.zookeeper.ServiceDiscovery;
 public class ExampleConsumer {
 	public static void main(String[] args) throws Throwable {
 
-		SnowFlake snowFlake = new SnowFlake(2, 3);
-		Session4Cluster session = new Session4Cluster();
 
-		JdkProxy proxy = new JdkProxy(session, snowFlake);
+		EventBus eventBus = new EventBus();
 
+		//加入zookeeper 发现
 		ServiceDiscovery discovery = new ServiceDiscovery();
+		discovery.regist(eventBus);
+
+		JdkProxy proxy = new JdkProxy();
+
+		NeptuneClusterConsumer clusterConsumer = new NeptuneClusterConsumer(proxy);
+
+		clusterConsumer.regist(eventBus);
+
+
+
+		SnowFlake snowFlake = new SnowFlake(2, 3);
+
+		HelloWorldService helloWorldService = proxy.proxy(HelloWorldService.class, clusterConsumer,snowFlake);
+
+
+
 		discovery.start();
-		
-		NeptuneConsumer neptuneConsumer = new NeptuneConsumer();
-		session.registerSession(neptuneConsumer.start(proxy, "127.0.0.1", 8899));
 
-		HelloWorldService helloWorldService = proxy.proxy(HelloWorldService.class);
-		helloWorldService.helloworld();
 
-		neptuneConsumer.stop();
+
+//		helloWorldService.helloworld();
+//
+//
+//
+//		clusterConsumer.stop();
+//		discovery.stop();
 	}
 }

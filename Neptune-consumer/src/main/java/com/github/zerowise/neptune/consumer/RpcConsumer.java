@@ -1,19 +1,26 @@
 package com.github.zerowise.neptune.consumer;
 
-import java.util.function.Consumer;
-
 import com.github.zerowise.neptune.Service;
-import com.github.zerowise.neptune.kernel.CodecFactory;
+import com.github.zerowise.neptune.event.EventBus;
+import com.github.zerowise.neptune.kernel.RequestMessage;
 import com.github.zerowise.neptune.kernel.ResponseMessage;
 import com.github.zerowise.neptune.kernel.Session;
 
-public interface RpcConsumer extends Service {
+import java.util.function.Consumer;
 
-	default void start() throws Throwable {
-	};
+public abstract class RpcConsumer implements Service, Consumer<RequestMessage> {
 
-	Session start(Consumer<ResponseMessage> consumer, String host, int inetPort);
+    protected EventBus eventBus;
+    protected Session session;
+    protected Consumer<ResponseMessage> consumer;
 
-	Session start(CodecFactory codecFactory, Consumer<ResponseMessage> consumer, String host, int inetPort);
+    @Override
+    public void regist(EventBus eventBus) {
+        this.eventBus = eventBus;
+    }
 
+    @Override
+    public void accept(RequestMessage requestMessage) {
+        session.sendMessage(requestMessage);
+    }
 }

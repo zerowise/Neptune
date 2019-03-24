@@ -20,15 +20,12 @@ import io.protostuff.runtime.RuntimeSchema;
 public class CodecFactory {
 
 	private static final Logger logger = LoggerFactory.getLogger("CodecFactory");
-	private final Class<?> clazz;
 	private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<>();
 
-	public CodecFactory(Class<?> clazz) {
-		super();
-		this.clazz = clazz;
+	private CodecFactory() {
 	}
 
-	public Consumer<Channel> build() {
+	public  static Consumer<Channel> build(Class<?> clazz) {
 		return channel -> {
 			channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4) {
 

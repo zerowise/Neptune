@@ -65,7 +65,6 @@
 		<dependency>
 			<groupId>com.github.zerowise</groupId>
 			<artifactId>Neptune-event</artifactId>
-			<version>${neptune.version}</version>
 		</dependency>
 
 	</dependencies>

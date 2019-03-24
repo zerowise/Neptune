@@ -32,7 +32,7 @@ public class Session4Client extends Session4Server {
 		}
 
 		try {
-			channel = bootstrap.connect(addr).sync().channel();
+			bind(channel = bootstrap.connect(addr).sync().channel());
 			logger.info("NeptuneConsumer connect {} success", addr);
 		} catch (InterruptedException e) {
 			logger.error("NeptuneConsumer connect {} failed", addr, e);
@@ -40,4 +40,13 @@ public class Session4Client extends Session4Server {
 		return isActive();
 	}
 
+	@Override
+	public void stop() {
+		if (bootstrap.config().group().isShutdown()) {
+			return;
+		}
+
+		bootstrap.config().group().shutdownGracefully();
+
+	}
 }

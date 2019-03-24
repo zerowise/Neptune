@@ -1,5 +1,8 @@
 package com.github.zerowise.neptune.kernel;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,4 +27,22 @@ public class Session4Cluster extends Session {
 				.get();
 	}
 
+	@Override
+	public void stop() {
+		sessions.values().forEach(Session::stop);
+		sessions.clear();
+	}
+
+	public void update(Map<Long, InetSocketAddress> addresses) {
+		List<Long> removes = new ArrayList<>();
+
+		sessions.forEach((key,val)->{
+			InetSocketAddress remove = addresses.remove(key);
+			if(remove == null){
+				removes.add(key);
+			}
+		});
+
+		removes.forEach(id-> sessions.remove(id).stop());
+	}
 }
