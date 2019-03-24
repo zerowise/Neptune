@@ -63,12 +63,11 @@ public class NeptuneClusterConsumer extends RpcConsumer {
                     NeptuneConsumer neptuneConsumer = new NeptuneConsumer(consumer, id, addr);
                     try {
                         neptuneConsumer.start();
+                        ((Session4Cluster) session).registerSession(neptuneConsumer.session);
                     } catch (Throwable throwable) {
                         logger.error("id{}, addr:{} start listen failed", id, addr);
                         return;
                     }
-                    ((Session4Cluster) session).registerSession(session);
-
                 });
             }
         });

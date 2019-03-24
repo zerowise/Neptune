@@ -9,6 +9,9 @@ import com.github.zerowise.neptune.proxy.JdkProxy;
 import com.github.zerowise.neptune.proxy.SnowFlake;
 import com.github.zerowise.neptune.zookeeper.ServiceDiscovery;
 
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Hello world!
  */
@@ -37,11 +40,16 @@ public class ExampleConsumer {
         discovery.start();
 
 
-//		helloWorldService.helloworld();
-//
-//
-//
-//		clusterConsumer.stop();
-//		discovery.stop();
+        TimeUnit.SECONDS.sleep(5);
+
+        int i = 0;
+        while (i < 10) {
+            helloWorldService.helloworld();
+            TimeUnit.SECONDS.sleep(new Random().nextInt(20));
+        }
+
+
+        clusterConsumer.stop();
+        discovery.stop();
     }
 }
